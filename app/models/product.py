@@ -1,6 +1,18 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, ARRAY
+from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy.orm import relationship
 
 from app.database.base_class import Base
+
+
+class ProductColorSizeLink(Base):
+    __tablename__ = 'product_color_size_link'
+    product_id = Column(Integer, ForeignKey('products.id'), primary_key=True)
+    color_id = Column(Integer, ForeignKey('colors.id'), primary_key=True)
+    size_id = Column(Integer, ForeignKey('sizes.id'), primary_key=True)
+    availability = Column(Integer, default=0)
+    product = relationship("Product", back_populates="color_size_combinations")
+    color = relationship("Color", back_populates="color_size_combinations")
+    size = relationship("Size", back_populates="color_size_combinations")
 
 
 class Product(Base):
@@ -10,6 +22,7 @@ class Product(Base):
     slug = Column(String, index=True)
     description = Column(String, index=True)
     price = Column(Float, index=True)
-    image = Column(String, index=True)
-    size_ids = Column(ARRAY(Integer), ForeignKey('sizes.id'))
-    color_ids = Column(ARRAY(Integer), ForeignKey('colors.id'))
+    image_url = Column(String, index=True)
+    sizes = relationship("ProductSizeLink", back_populates="product")
+    color_size_combi = relationship(
+        "ProductColorSizeLink", back_populates="product")
