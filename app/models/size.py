@@ -9,5 +9,5 @@ class Size(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     abbreviation = Column(String)
-    color_size_combi = relationship(
+    color_size_combinations = relationship(
         "ProductColorSizeLink", back_populates="size")

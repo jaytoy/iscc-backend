@@ -9,5 +9,5 @@ class Color(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     hex_code = Column(String, unique=True)
-    color_size_combi = relationship(
+    color_size_combinations = relationship(
         "ProductColorSizeLink", back_populates="color")

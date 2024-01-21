@@ -1,17 +1,25 @@
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
-from app.schemas import Color, Size
+from .color import Color
+from .size import Size
+
+
+class ProductColorSizeLink(BaseModel):
+    product_id: int
+    color: Color
+    size: Size
+    availability: int
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProductBase(BaseModel):
     name: str
     slug: str
     description: Optional[str] = None
-
     price: float
-    sizes: List[Size]
-    colors: List[Color] = None
+    image_url: Optional[str] = None
 
 
 class ProductCreate(ProductBase):
@@ -25,12 +33,10 @@ class ProductUpdate(ProductBase):
 class ProductInDBBase(ProductBase):
     # Properties shared by models stored in DB
     id: int
-    slug: str
+    color_size_combinations: List[ProductColorSizeLink] = []
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class Product(ProductInDBBase):
-    # Properties to return to client
     pass

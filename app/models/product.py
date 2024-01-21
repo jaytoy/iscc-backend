@@ -10,9 +10,12 @@ class ProductColorSizeLink(Base):
     color_id = Column(Integer, ForeignKey('colors.id'), primary_key=True)
     size_id = Column(Integer, ForeignKey('sizes.id'), primary_key=True)
     availability = Column(Integer, default=0)
-    product = relationship("Product", back_populates="color_size_combinations")
-    color = relationship("Color", back_populates="color_size_combinations")
-    size = relationship("Size", back_populates="color_size_combinations")
+    product = relationship("Product",
+                           back_populates="color_size_combinations")
+    color = relationship("Color",
+                         back_populates="color_size_combinations")
+    size = relationship("Size",
+                        back_populates="color_size_combinations")
 
 
 class Product(Base):
@@ -23,6 +26,5 @@ class Product(Base):
     description = Column(String, index=True)
     price = Column(Float, index=True)
     image_url = Column(String, index=True)
-    sizes = relationship("ProductSizeLink", back_populates="product")
-    color_size_combi = relationship(
+    color_size_combinations = relationship(
         "ProductColorSizeLink", back_populates="product")

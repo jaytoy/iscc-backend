@@ -1,7 +1,9 @@
 from fastapi import FastAPI, APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app import controllers, deps
+from app import controllers
+from app import deps
+from app.schemas.product import Product
 
 app = FastAPI(
     title="E-commerce API", openapi_url="/openapi.json"
@@ -18,17 +20,6 @@ def root() -> dict:
     return {"msg": "Hello, World!"}
 
 
-@api_router.get("/products", status_code=200)
-def get_products() -> dict:
-    """
-    Get all products
-    """
-    products = controllers.product.get_all(db=Depends(deps.get_db))
-    if not products:
-        raise HTTPException(status_code=404, detail="Products not found")
-    return {"products": products}
-
-
 @api_router.get("/products/{product_slug}", status_code=200)
 def get_product(
     *,
@@ -36,12 +27,12 @@ def get_product(
     db: Session = Depends(deps.get_db)
 ) -> dict:
     """
-    Get a product
+    Get a product by slug
     """
-    product = controllers.product.get_by_slug(db, id=product_slug)
+    product = controllers.product.get_by_slug(db=db, slug=product_slug)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-    return {"product": product}
+    return {"product": Product.model_validate(product)}
 
 
 app.include_router(api_router)
