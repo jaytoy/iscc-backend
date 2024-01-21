@@ -1,5 +1,6 @@
-from fastapi import FastAPI, APIRouter, Depends, HTTPException
+from fastapi import FastAPI, APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from typing import Optional
 
 from app import controllers
 from app import deps
@@ -33,6 +34,29 @@ def get_product(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return {"product": Product.model_validate(product)}
+
+
+@api_router.post("/add-to-cart/{product_slug}", status_code=200)
+async def add_to_cart(
+    *,
+    product_slug: str,
+    quantity: Optional[int] = Query(None),
+    color: Optional[str] = Query(None),
+    size: Optional[str] = Query(None),
+    db: Session = Depends(deps.get_db)
+) -> dict:
+    """
+    Add a product to cart
+    """
+    quantity_part = f"with quantity of {quantity}" if quantity is not None else ""
+    size_part = f"size {size}" if size is not None else ""
+    color_part = f"{color} color" if color is not None else ""
+
+    message = f"Product '{product_slug}', {quantity_part}, {size_part}, {color_part} added to cart"
+
+    message = ' '.join(message.split()).replace(" ,", ",")
+
+    return {"message": message}
 
 
 app.include_router(api_router)
