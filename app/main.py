@@ -9,6 +9,7 @@ from typing import Optional
 from app import controllers
 from app import deps
 from app.schemas.product import Product
+from app.schemas.cart import Cart
 from app.services.pika_client import PikaClient
 
 logger = logging.getLogger(__name__)
@@ -80,9 +81,7 @@ def get_product(
 async def add_to_cart(
     *,
     product_slug: str,
-    quantity: Optional[int] = Query(None),
-    color: Optional[str] = Query(None),
-    size: Optional[str] = Query(None),
+    payload: Cart,
     request: Request
 ) -> dict:
     """
@@ -90,10 +89,12 @@ async def add_to_cart(
     """
     # Construct the message
     cart_item = {
+        "product_id": payload.product_id,
+        "product_name": payload.product_name,
         "product_slug": product_slug,
-        "quantity": quantity if quantity is not None else "unspecified",
-        "color": color if color is not None else "unspecified",
-        "size": size if size is not None else "unspecified"
+        "size": payload.size,
+        "color_id": payload.color_id,
+        "quantity": payload.quantity,
     }
 
     # Convert the object to a JSON string
