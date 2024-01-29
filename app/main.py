@@ -1,4 +1,5 @@
 from fastapi import FastAPI, APIRouter, Depends, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import Optional
 
@@ -10,6 +11,19 @@ app = FastAPI(
     title="E-commerce API", openapi_url="/openapi.json"
 )
 
+origins = [
+    "http://localhost",
+    "http://localhost:8080",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 api_router = APIRouter()
 
 
@@ -19,6 +33,18 @@ def root() -> dict:
     Root Get
     """
     return {"msg": "Hello, World!"}
+
+
+@api_router.get("/products", status_code=200)
+def get_products(
+    *,
+    db: Session = Depends(deps.get_db)
+) -> dict:
+    """
+    Get all products
+    """
+    products = controllers.product.get_multi(db=db)
+    return {"products": [Product.model_validate(product) for product in products]}
 
 
 @api_router.get("/products/{product_slug}", status_code=200)
