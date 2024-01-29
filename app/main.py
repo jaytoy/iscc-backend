@@ -1,4 +1,7 @@
-from fastapi import FastAPI, APIRouter, Depends, HTTPException, Query
+import logging
+import json
+
+from fastapi import FastAPI, APIRouter, Depends, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -6,25 +9,36 @@ from typing import Optional
 from app import controllers
 from app import deps
 from app.schemas.product import Product
+from app.services.pika_client import PikaClient
 
-app = FastAPI(
-    title="E-commerce API", openapi_url="/openapi.json"
-)
+logger = logging.getLogger(__name__)
 
-origins = [
-    "http://localhost",
-    "http://localhost:8080",
-]
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+class App(FastAPI):
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.pika_client = PikaClient()
+
+        # Initialize CORS middleware
+        origins = ["http://localhost", "http://localhost:8080"]
+        self.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+
+        # Include API Router
+        self.include_router(api_router)
+
+
+# API Router definition
 api_router = APIRouter()
+
+# Initialize FastAPI app
+app = App(title="E-commerce API", openapi_url="/openapi.json")
 
 
 @api_router.get("/", status_code=200)
@@ -69,20 +83,26 @@ async def add_to_cart(
     quantity: Optional[int] = Query(None),
     color: Optional[str] = Query(None),
     size: Optional[str] = Query(None),
-    db: Session = Depends(deps.get_db)
+    request: Request
 ) -> dict:
     """
-    Add a product to cart
+    Handle add-to-cart request and publish message to RabbitMQ
     """
-    quantity_part = f"with quantity of {quantity}" if quantity is not None else ""
-    size_part = f"size {size}" if size is not None else ""
-    color_part = f"{color} color" if color is not None else ""
+    # Construct the message
+    cart_item = {
+        "product_slug": product_slug,
+        "quantity": quantity if quantity is not None else "unspecified",
+        "color": color if color is not None else "unspecified",
+        "size": size if size is not None else "unspecified"
+    }
 
-    message = f"Product '{product_slug}', {quantity_part}, {size_part}, {color_part} added to cart"
+    # Convert the object to a JSON string
+    message = json.dumps(cart_item)
 
-    message = ' '.join(message.split()).replace(" ,", ",")
-
-    return {"message": message}
+    request.app.pika_client.publish_message(
+        {"message": message}
+    )
+    return {"message": "Product added to cart", "cart_item": cart_item}
 
 
 app.include_router(api_router)
