@@ -69,3 +69,7 @@ The automatic interactive API documentation can be accessed at:
 ```
 localhost:8000/docs
 ```
+
+## Important Note
+
+Now you have successfully setup the backend, you can continue to setup the frontend part of the application. The frontend code can be found [here](https://github.com/jaytoy/iscc-frontend).
